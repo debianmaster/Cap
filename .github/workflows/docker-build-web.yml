@@ -8,6 +8,23 @@ on:
         required: false
         default: "latest"
         type: string
+      extra_tags:
+        description: "Additional image tags, space separated"
+        required: false
+        default: ""
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag for the Docker image"
+        required: false
+        default: "latest"
+        type: string
+      extra_tags:
+        description: "Additional image tags, space separated"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -105,6 +122,11 @@ jobs:
           echo "REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER@L}" >>${GITHUB_ENV}
 
       - name: Create Image Manifest
+        env:
+          IMAGE_TAGS: ${{ inputs.tag || 'latest' }} ${{ inputs.extra_tags }}
         run: |
-          docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web:${{ inputs.tag || 'latest' }} \
-            $(find /tmp/digests -type f -not -path "*/\.*" -exec basename {} \; | xargs -I {} echo "ghcr.io/${{ env.REPOSITORY_OWNER }}/cap-web@sha256:{}")
+          set -euo pipefail
+          sources=$(find /tmp/digests -type f -not -path "*/\.*" -exec basename {} \; | xargs -I {} echo "ghcr.io/${REPOSITORY_OWNER}/cap-web@sha256:{}")
+          for tag in $IMAGE_TAGS; do
+            docker buildx imagetools create -t "ghcr.io/${REPOSITORY_OWNER}/cap-web:${tag}" $sources
+          done

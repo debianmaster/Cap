@@ -7,7 +7,15 @@ const env = vi.hoisted(() => ({
 	CAP_ALLOWED_SIGNUP_DOMAINS: undefined,
 	GOOGLE_CLIENT_ID: "google-client",
 	GOOGLE_CLIENT_SECRET: "google-secret",
+	KEYCLOAK_ISSUER: undefined as string | undefined,
+	KEYCLOAK_CLIENT_ID: undefined as string | undefined,
+	KEYCLOAK_CLIENT_SECRET: undefined as string | undefined,
+	KEYCLOAK_CALLBACK_URL: undefined as string | undefined,
+	CLIENT_ID: undefined as string | undefined,
+	CLIENT_SECRET: undefined as string | undefined,
+	CALLBACK_URL: undefined as string | undefined,
 	NEXTAUTH_SECRET: "next-auth-secret",
+	NEXTAUTH_URL: "https://cap.example.com",
 	RESEND_API_KEY: undefined,
 	WORKOS_API_KEY: "workos-secret",
 	WORKOS_CLIENT_ID: "workos-client",
@@ -21,6 +29,13 @@ describe("authOptions", () => {
 	beforeEach(() => {
 		env.APPLE_CLIENT_ID = "so.cap.auth";
 		env.APPLE_CLIENT_SECRET = "apple-secret";
+		env.KEYCLOAK_ISSUER = undefined;
+		env.KEYCLOAK_CLIENT_ID = undefined;
+		env.KEYCLOAK_CLIENT_SECRET = undefined;
+		env.KEYCLOAK_CALLBACK_URL = undefined;
+		env.CLIENT_ID = undefined;
+		env.CLIENT_SECRET = undefined;
+		env.CALLBACK_URL = undefined;
 	});
 
 	it("enables Apple when both OAuth credentials are configured", () => {
@@ -51,5 +66,46 @@ describe("authOptions", () => {
 		expect((email as { options?: { maxAge?: number } }).options?.maxAge).toBe(
 			10 * 60,
 		);
+	});
+
+	it("omits Keycloak when it is not configured", () => {
+		const providers = authOptions().providers.map((provider) => provider.id);
+
+		expect(providers).not.toContain("keycloak");
+	});
+
+	it("enables Keycloak from the prefixed credentials", () => {
+		env.KEYCLOAK_ISSUER = "https://sso.example.com/realms/cap";
+		env.KEYCLOAK_CLIENT_ID = "cap-web";
+		env.KEYCLOAK_CLIENT_SECRET = "keycloak-secret";
+
+		const keycloak = authOptions().providers.find(
+			(provider) => provider.id === "keycloak",
+		) as { options?: { issuer?: string; clientId?: string } } | undefined;
+
+		expect(keycloak).toBeDefined();
+		expect(keycloak?.options?.issuer).toBe(
+			"https://sso.example.com/realms/cap",
+		);
+		expect(keycloak?.options?.clientId).toBe("cap-web");
+	});
+
+	it("enables Keycloak from the unprefixed CLIENT_ID/CLIENT_SECRET pair", () => {
+		env.KEYCLOAK_ISSUER = "https://sso.example.com/realms/cap";
+		env.CLIENT_ID = "cap-web";
+		env.CLIENT_SECRET = "keycloak-secret";
+
+		const providers = authOptions().providers.map((provider) => provider.id);
+
+		expect(providers).toContain("keycloak");
+	});
+
+	it("does not expose a Keycloak provider without an issuer", () => {
+		env.CLIENT_ID = "cap-web";
+		env.CLIENT_SECRET = "keycloak-secret";
+
+		const providers = authOptions().providers.map((provider) => provider.id);
+
+		expect(providers).not.toContain("keycloak");
 	});
 });
