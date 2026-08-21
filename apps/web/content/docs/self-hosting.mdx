@@ -186,6 +186,39 @@ APPLE_CLIENT_SECRET=your-client-secret-jwt
 Apple client-secret JWTs expire, so rotate the secret before its configured
 expiration date.
 
+### Keycloak SSO
+
+Create an OpenID Connect client in your Keycloak realm with:
+
+- **Client authentication** enabled (Cap uses the confidential client flow)
+- **Valid redirect URI** set to `https://your-domain.example/api/auth/callback/keycloak`
+
+Then configure Cap:
+
+```bash
+KEYCLOAK_ISSUER=https://sso.example.com/realms/cap
+CLIENT_ID=your-keycloak-client-id
+CLIENT_SECRET=your-keycloak-client-secret
+CALLBACK_URL=https://your-domain.example/api/auth/callback/keycloak
+```
+
+`KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, and `KEYCLOAK_CALLBACK_URL` are
+accepted as prefixed aliases and take precedence over the unprefixed names above.
+All three of the issuer, client id, and client secret are required — if any is
+missing the Keycloak button is hidden and Cap logs which variable it needs.
+
+Cap derives the redirect URI it sends from `NEXTAUTH_URL`, so `CALLBACK_URL`
+must be `NEXTAUTH_URL` + `/api/auth/callback/keycloak`. A mismatch is written to
+the server log the first time Cap builds its auth providers, because Keycloak
+only reports it as an opaque `invalid_redirect_uri` error.
+
+Keycloak accounts are matched to Cap users by the email address in the ID token,
+so grant the client the `email` scope and make sure realm users have a verified
+email. Signing in with a Keycloak account whose email already exists in Cap under
+a different sign-in method fails with `OAuthAccountNotLinked`; the
+`CAP_ALLOWED_SIGNUP_DOMAINS` allowlist applies to Keycloak signups as it does to
+every other provider.
+
 ## Production Checklist
 
 <Warning title="Critical: Change Default Secrets Before Going Public">

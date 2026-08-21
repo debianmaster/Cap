@@ -70,6 +70,30 @@ function createServerEnv() {
 			APPLE_CLIENT_ID: z.string().optional(),
 			APPLE_CLIENT_SECRET: z.string().optional(),
 
+			/// Keycloak SSO
+			// Provide these to allow Keycloak (OIDC) login. The KEYCLOAK_-prefixed
+			// names take precedence over the unprefixed ones.
+			KEYCLOAK_ISSUER: z
+				.string()
+				.optional()
+				.describe(
+					"Keycloak realm issuer URL eg. https://sso.example.com/realms/cap",
+				),
+			KEYCLOAK_CLIENT_ID: z.string().optional(),
+			KEYCLOAK_CLIENT_SECRET: z.string().optional(),
+			KEYCLOAK_CALLBACK_URL: z
+				.string()
+				.optional()
+				.describe(
+					"Redirect URI registered in Keycloak, eg. https://cap.example.com/api/auth/callback/keycloak",
+				),
+			CLIENT_ID: z.string().optional().describe("Keycloak client id"),
+			CLIENT_SECRET: z.string().optional().describe("Keycloak client secret"),
+			CALLBACK_URL: z
+				.string()
+				.optional()
+				.describe("Keycloak redirect URI registered for this Cap deployment"),
+
 			/// WorkOS SSO
 			// Provide these to use WorkOS for enterprise SSO
 			WORKOS_CLIENT_ID: z.string().optional(),

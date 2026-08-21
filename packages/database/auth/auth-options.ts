@@ -16,6 +16,7 @@ import { db } from "../index.ts";
 import { users } from "../schema.ts";
 import { isEmailAllowedForSignup } from "./domain-utils.ts";
 import { DrizzleAdapter } from "./drizzle-adapter.ts";
+import { keycloakProvider } from "./keycloak.ts";
 
 export const maxDuration = 120;
 
@@ -73,6 +74,7 @@ export const authOptions = (): NextAuthOptions => {
 			if (_providers) return _providers;
 			const appleClientId = serverEnv().APPLE_CLIENT_ID;
 			const appleClientSecret = serverEnv().APPLE_CLIENT_SECRET;
+			const keycloak = keycloakProvider(serverEnv());
 			_providers = [
 				...(appleClientId && appleClientSecret
 					? [
@@ -82,6 +84,7 @@ export const authOptions = (): NextAuthOptions => {
 							}),
 						]
 					: []),
+				...(keycloak ? [keycloak] : []),
 				GoogleProvider({
 					clientId: serverEnv().GOOGLE_CLIENT_ID as string,
 					clientSecret: serverEnv().GOOGLE_CLIENT_SECRET as string,

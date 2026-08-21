@@ -2,6 +2,7 @@ import { NODE_ENV } from "@cap/env";
 import { Button, Dialog, DialogContent, Input, LogoBadge } from "@cap/ui";
 import { faArrowLeft, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { LucideKeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -150,6 +151,19 @@ const StepOne = ({
 			callbackUrl: `${window.location.origin}/s/${videoId}`,
 		});
 	};
+	const handleKeycloakSignIn = () => {
+		trackEvent("auth_started", {
+			method: "keycloak",
+			is_signup: false,
+			auth_surface: "share_overlay",
+			video_id: videoId,
+		});
+		setLoading(true);
+		signIn("keycloak", {
+			redirect: false,
+			callbackUrl: `${window.location.origin}/s/${videoId}`,
+		});
+	};
 	const publicEnv = usePublicEnv();
 
 	return (
@@ -224,23 +238,37 @@ const StepOne = ({
 						: "Email sent to your inbox"
 					: "Continue with Email"}
 			</Button>
-			{publicEnv.googleAuthAvailable && (
+			{(publicEnv.googleAuthAvailable || publicEnv.keycloakAuthAvailable) && (
 				<>
 					<div className="flex gap-4 items-center">
 						<span className="flex-1 h-px bg-gray-5" />
 						<p className="text-sm text-center text-gray-10">OR</p>
 						<span className="flex-1 h-px bg-gray-5" />
 					</div>
-					<Button
-						variant="gray"
-						type="button"
-						className="flex gap-2 justify-center items-center my-1 w-full text-sm"
-						onClick={handleGoogleSignIn}
-						disabled={loading}
-					>
-						<Image src="/google.svg" alt="Google" width={16} height={16} />
-						Login with Google
-					</Button>
+					{publicEnv.googleAuthAvailable && (
+						<Button
+							variant="gray"
+							type="button"
+							className="flex gap-2 justify-center items-center my-1 w-full text-sm"
+							onClick={handleGoogleSignIn}
+							disabled={loading}
+						>
+							<Image src="/google.svg" alt="Google" width={16} height={16} />
+							Login with Google
+						</Button>
+					)}
+					{publicEnv.keycloakAuthAvailable && (
+						<Button
+							variant="gray"
+							type="button"
+							className="flex gap-2 justify-center items-center my-1 w-full text-sm"
+							onClick={handleKeycloakSignIn}
+							disabled={loading}
+						>
+							<LucideKeyRound size={16} />
+							Login with Keycloak
+						</Button>
+					)}
 				</>
 			)}
 		</form>

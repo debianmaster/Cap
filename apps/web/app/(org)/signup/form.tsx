@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
 import Cookies from "js-cookie";
-import { LucideArrowUpRight } from "lucide-react";
+import { LucideArrowUpRight, LucideKeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -113,6 +113,18 @@ export function SignupForm() {
 			auth_surface: "signup",
 		});
 		signIn("google", {
+			...(nextPath ? { callbackUrl: nextPath } : {}),
+		});
+	};
+
+	const handleKeycloakSignIn = () => {
+		const nextPath = getNextPath();
+		trackEvent("auth_started", {
+			method: "keycloak",
+			is_signup: true,
+			auth_surface: "signup",
+		});
+		signIn("keycloak", {
 			...(nextPath ? { callbackUrl: nextPath } : {}),
 		});
 	};
@@ -302,6 +314,7 @@ export function SignupForm() {
 											loading={loading}
 											oauthError={oauthError}
 											handleGoogleSignIn={handleGoogleSignIn}
+											handleKeycloakSignIn={handleKeycloakSignIn}
 										/>
 									</motion.form>
 								)}
@@ -397,6 +410,7 @@ const NormalSignup = ({
 	loading,
 	oauthError,
 	handleGoogleSignIn,
+	handleKeycloakSignIn,
 }: {
 	setShowOrgInput: (show: boolean) => void;
 	email: string;
@@ -405,6 +419,7 @@ const NormalSignup = ({
 	loading: boolean;
 	oauthError: boolean;
 	handleGoogleSignIn: () => void;
+	handleKeycloakSignIn: () => void;
 }) => {
 	const publicEnv = usePublicEnv();
 	const emailInputId = useId();
@@ -440,7 +455,9 @@ const NormalSignup = ({
 					{loading ? "Sending code..." : "Sign up with email"}
 				</MotionButton>
 			</motion.div>
-			{(publicEnv.googleAuthAvailable || publicEnv.workosAuthAvailable) && (
+			{(publicEnv.googleAuthAvailable ||
+				publicEnv.workosAuthAvailable ||
+				publicEnv.keycloakAuthAvailable) && (
 				<>
 					<div className="flex gap-4 items-center my-4">
 						<span className="flex-1 h-px bg-gray-5" />
@@ -451,7 +468,7 @@ const NormalSignup = ({
 						layout
 						className="flex flex-col gap-3 justify-center items-center"
 					>
-						{!oauthError && (
+						{publicEnv.googleAuthAvailable && !oauthError && (
 							<MotionButton
 								variant="gray"
 								type="button"
@@ -477,17 +494,32 @@ const NormalSignup = ({
 								</p>
 							</div>
 						)}
-						<MotionButton
-							variant="gray"
-							type="button"
-							className="w-full"
-							layout
-							onClick={() => setShowOrgInput(true)}
-							disabled={loading}
-						>
-							<LucideArrowUpRight size={20} />
-							Sign up with SAML SSO
-						</MotionButton>
+						{publicEnv.keycloakAuthAvailable && (
+							<MotionButton
+								variant="gray"
+								type="button"
+								className="flex gap-2 justify-center items-center w-full text-sm"
+								layout
+								onClick={handleKeycloakSignIn}
+								disabled={loading}
+							>
+								<LucideKeyRound size={16} />
+								Sign up with Keycloak
+							</MotionButton>
+						)}
+						{publicEnv.workosAuthAvailable && (
+							<MotionButton
+								variant="gray"
+								type="button"
+								className="w-full"
+								layout
+								onClick={() => setShowOrgInput(true)}
+								disabled={loading}
+							>
+								<LucideArrowUpRight size={20} />
+								Sign up with SAML SSO
+							</MotionButton>
+						)}
 					</motion.div>
 				</>
 			)}

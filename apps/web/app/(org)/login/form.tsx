@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
 import Cookies from "js-cookie";
-import { LucideArrowUpRight } from "lucide-react";
+import { LucideArrowUpRight, LucideKeyRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -145,6 +145,18 @@ export function LoginForm() {
 			auth_surface: "login",
 		});
 		signIn("apple", {
+			...(nextPath ? { callbackUrl: nextPath } : {}),
+		});
+	}, [getNextPath]);
+
+	const handleKeycloakSignIn = useCallback(() => {
+		const nextPath = getNextPath();
+		trackEvent("auth_started", {
+			method: "keycloak",
+			is_signup: false,
+			auth_surface: "login",
+		});
+		signIn("keycloak", {
 			...(nextPath ? { callbackUrl: nextPath } : {}),
 		});
 	}, [getNextPath]);
@@ -374,6 +386,7 @@ export function LoginForm() {
 											loading={loading}
 											oauthError={oauthError}
 											handleGoogleSignIn={handleGoogleSignIn}
+											handleKeycloakSignIn={handleKeycloakSignIn}
 										/>
 									</motion.form>
 								)}
@@ -455,6 +468,7 @@ const NormalLogin = ({
 	loading,
 	oauthError,
 	handleGoogleSignIn,
+	handleKeycloakSignIn,
 }: {
 	setShowOrgInput: (show: boolean) => void;
 	email: string;
@@ -463,6 +477,7 @@ const NormalLogin = ({
 	loading: boolean;
 	oauthError: boolean;
 	handleGoogleSignIn: () => void;
+	handleKeycloakSignIn: () => void;
 }) => {
 	const publicEnv = usePublicEnv();
 	const emailInputId = useId();
@@ -521,7 +536,9 @@ const NormalLogin = ({
 				</Link>
 			</motion.p>
 
-			{(publicEnv.googleAuthAvailable || publicEnv.workosAuthAvailable) && (
+			{(publicEnv.googleAuthAvailable ||
+				publicEnv.workosAuthAvailable ||
+				publicEnv.keycloakAuthAvailable) && (
 				<>
 					<div className="flex gap-4 items-center mt-4 mb-4">
 						<span className="flex-1 h-px bg-gray-5" />
@@ -556,6 +573,19 @@ const NormalLogin = ({
 									email login. Please enter your email.
 								</p>
 							</div>
+						)}
+						{publicEnv.keycloakAuthAvailable && (
+							<MotionButton
+								variant="gray"
+								type="button"
+								className="flex gap-2 justify-center items-center w-full text-sm"
+								layout
+								onClick={handleKeycloakSignIn}
+								disabled={loading || emailSent}
+							>
+								<LucideKeyRound size={16} />
+								Login with Keycloak
+							</MotionButton>
 						)}
 						{publicEnv.workosAuthAvailable && (
 							<MotionButton
